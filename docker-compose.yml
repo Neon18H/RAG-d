@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  retriever:
+    build: ./retriever
+    container_name: rag_retriever
+    env_file: .env
+    environment:
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+      - TOP_K=${TOP_K}
+    volumes:
+      - retriever_data:/data
+      - ./docs:/docs:ro
+    ports:
+      - "8001:8001"
+
+  # ====== PILA LOCAL (modelo en Ollama) ======
+  api_local:
+    build: ./api
+    container_name: rag_api_local
+    depends_on:
+      - retriever
+    env_file: .env
+    environment:
+      - MODEL_PROVIDER=local
+      - LLM_MODEL=${LLM_MODEL}
+      - RETRIEVER_URL=http://retriever:8001
+      - OLLAMA_URL=http://host.docker.internal:11434
+    ports:
+      - "8000:8000"
+    profiles: ["local"]
+
+  frontend_local:
+    build: ./frontend_local
+    container_name: rag_frontend_local
+    depends_on:
+      - api_local
+    environment:
+      - API_URL=http://api_local:8000
+    ports:
+      - "3000:3000"
+    profiles: ["local"]
+
+
+  # ====== PILA API EXTERNA (OpenRouter) ======
+  api_api:
+    build: ./api
+    container_name: rag_api_api
+    depends_on:
+      - retriever
+    env_file: .env
+    environment:
+      - MODEL_PROVIDER=openrouter
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=mistralai/mistral-7b-instruct:free
+      - OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+      - RETRIEVER_URL=http://retriever:8001
+    ports:
+      - "8010:8000"
+    profiles: ["api"]
+
+
+  frontend_api:
+    build: ./frontend_api
+    container_name: rag_frontend_api
+    depends_on:
+      - api_api
+    environment:
+      - API_URL=http://api_api:8000
+    ports:
+      - "3010:3000"
+    profiles: ["api"]
+
+volumes:
+  retriever_data:
+  ollama_models:
