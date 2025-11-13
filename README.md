@@ -39,3 +39,5 @@ La comunicación entre servicios se hizo vía HTTP REST, con endpoints estandari
 Se usaron perfiles de Docker Compose (local y api) para probar las dos versiones completas sin conflicto.
 
 El desarrollo se coordinó mediante ramas compartidas (backend/ y frontend/), asegurando compatibilidad continua.
+
+![alt text](<Captura de pantalla 2025-11-07 000037.png>)
